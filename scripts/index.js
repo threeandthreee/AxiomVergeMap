@@ -22,23 +22,35 @@ var colorTheme = {
 	lockGreyscale: "#000000",
 }
 
-window.onload = function () 
+var EnumsPowers = {
+	None: 0,
+	Gun: 1 << 1,
+	Nova: 1 << 2,
+}
+
+window.onload = function ()
 {
 	ClearAll();
 	const socket = new WebSocket(websocket_endpoint);
 	socket.onmessage = event => appendData(JSON.parse(event.data));
 }
 
-function appendData(data) 
+function appendData(data)
 {
 	console.log(data);
-	if (data.Items.length > 0) {
-		GetMap(data);
+	IsRandomizer = data.IsRandomizer;
+	var KonamiCodeStart = (data.Items.length == 1 && data.Items[0].mName == "PasswordTool");
+	if (data.Items.length == 0 || KonamiCodeStart) {
+		NewGameStart(data);
 	}
 	else {
-		ClearAll();
-		document.getElementById("DataDisruptor").innerHTML = `<div class="open"><div class="unobtained"></div></div>`;
+		GetMap(data);
 	}
+}
+
+function NewGameStart(data) {
+	ClearAll();
+	GetMap(data);
 }
 
 function ClearAll() {
@@ -55,6 +67,7 @@ function ClearAll() {
 
 function SetItems(data) {
 	data.Items.forEach((item) => {
+		console.log(`Item: ${item.mName} Obtained`);
 		document.getElementById(item.mName).innerHTML = `<div class="obtained"></div>`;
 	});
 }
@@ -64,6 +77,7 @@ function SetItemsRandom(data) {
 		for(var key in data.RandomItems) {
 			  var value = data.RandomItems[key];
 			  if (value == item.mName) {
+				  console.log(`Item: ${item.mName} Obtained`);
 				  document.getElementById(key).innerHTML = `<div class="obtained"></div>`;
 			  }
 		}
@@ -71,42 +85,114 @@ function SetItemsRandom(data) {
 }
 
 function CheckOpen(data) {
-	for (var i = 1; i < data.LocationsData.length; i++) {
-		var IsOpen = false;
-		if (data.LocationsData[i].RequiredPowers3 > 0 && !IsOpen) {
-			console.log(data.LocationsData[i].RequiredPowers3);
-			IsOpen = CheckPowers(data.CurrentPowers, data.LocationsData[i].RequiredPowers3);
-		}
+	for (const itemLocation of data.LocationsData) {
+    	const openData = {
+    		defaultOpen: CheckDefault(data, itemLocation),
+    		advancedOpen: CheckAdvanced(data, itemLocation),
+    		masochistOpen: CheckMasochist(data, itemLocation)
+    	};
+    	const isAdvanced = data.progression === 1;
+    	const isMasochist = data.progression === 2;
 
-		if (data.LocationsData[i].RequiredPowers2 > 0 && !IsOpen) {
-			console.log(data.LocationsData[i].RequiredPowers2);
-			IsOpen = CheckPowers(data.CurrentPowers, data.LocationsData[i].RequiredPowers2);
-		}
+    	const {defaultOpen, advancedOpen, masochistOpen} = openData;
 
-		if (!IsOpen) {
-			console.log(data.LocationsData[i].RequiredPowers);
-			IsOpen = CheckPowers(data.CurrentPowers, data.LocationsData[i].RequiredPowers);
-		}
+		let IsOpen = defaultOpen || advancedOpen || masochistOpen;
 
-		if (IsOpen) {
-			console.log(IsOpen);
-			document.getElementById(data.LocationsData[i].VanillaItemName).innerHTML = `<div class="open"><div class="unobtained"></div></div>`;
+		if (IsOpen) 
+		{
+			OpenDefault(itemLocation, defaultOpen, advancedOpen);
+
+      		if (advancedOpen && isAdvanced)
+			{
+				OpenAdvanced(itemLocation, defaultOpen, advancedOpen);
+			}
+
+      		if (masochistOpen && isMasochist)
+			{
+				OpenMasochist(itemLocation);
+			}
+		}
+		else if (!IsOpen) {
+			document.getElementById(itemLocation.VanillaItemName).innerHTML = `<div class="closed"><div class="unobtained"></div></div>`;
 		}
 	}
 }
 
+function BaseCheck(data, itemLocation, key) {
+  if (itemLocation[key]) {
+    for (const power of itemLocation[key]) {
+      if (CheckPowers(data.CurrentPowers, power)) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  return false;
+}
+
+function CheckDefault(data, itemLocation)
+{
+  return BaseCheck(data, itemLocation, 'RequiredPowers');
+}
+
+function CheckAdvanced(data, itemLocation)
+{
+  return BaseCheck(data, itemLocation, 'RequiredPowersAdvanced');
+}
+
+function CheckMasochist(data, itemLocation)
+{
+  return BaseCheck(data, itemLocation, 'RequiredPowersMasochist');
+}
+
+function OpenDefault(itemLocation, easy, normal)
+{
+	if (easy) {
+		//console.log("Open With Default Logic");
+		document.getElementById(itemLocation.VanillaItemName).innerHTML = `<div class="open"><div class="unobtained"></div></div>`;
+	}
+	else if (normal) {
+		//console.log("Open With Advanced Logic");
+		document.getElementById(itemLocation.VanillaItemName).innerHTML = `<div class="openadvanced"><div class="unobtained"></div></div>`;
+	}
+	else {
+		//console.log("Open With Masochist Logic");
+		document.getElementById(itemLocation.VanillaItemName).innerHTML = `<div class="openmasochist"><div class="unobtained"></div></div>`;
+	}
+}
+
+function OpenAdvanced(itemLocation, easy, normal)
+{
+	if (easy || normal) {
+		//console.log("Open With Default/Advanced Logic");
+		document.getElementById(itemLocation.VanillaItemName).innerHTML = `<div class="open"><div class="unobtained"></div></div>`;
+	}
+	else {
+		//console.log("Open With Masochist Logic");
+		document.getElementById(itemLocation.VanillaItemName).innerHTML = `<div class="openadvanced"><div class="unobtained"></div></div>`;
+	}
+}
+
+function OpenMasochist(itemLocation)
+{
+	//console.log("Open With Default/Masochist Logic");
+	document.getElementById(itemLocation.VanillaItemName).innerHTML = `<div class="open"><div class="unobtained"></div></div>`;
+}
+
 var CheckPowers = (current_powers, required_powers) => {
-	return ((current_powers & required_powers) === required_powers);
+	return (current_powers & required_powers) === required_powers;
 }
 
 function GetMap(data) {
 	CheckOpen(data);
-
 	if (IsRandomizer) {
 		SetItemsRandom(data);
 	}
-
 	else {
 		SetItems(data);
 	}
+
+  
 }
