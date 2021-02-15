@@ -5,13 +5,6 @@ body {
 	font-size: 14px;
 }
 
-#areaname {
-	position: absolute;
-	top: 130px;
-	width: 684px;
-	text-align: center;
-}
-
 #map {
 	position: absolute;
 	left: 0px;
@@ -607,6 +600,13 @@ body {
 	left: calc((20px * 40) + 8px);
 }
 
+/* SLUG */
+#HealthNodeFragment15 {
+	position: absolute;
+	top: calc((20px * 48) + 8px);
+    left: calc((20px * 45) + 8px);
+}
+
 /* UKKIN-NA ITEMS 23x17*/
 #BlackCoat {
 	position: absolute;
@@ -873,23 +873,4 @@ body {
 	position: absolute;
 	top: calc((20px * 8) + 8px);
 	left: calc((20px * 22) + 8px);
-}
-
-/* SLUGS */
-.eribu {
-	position: absolute;
-	top: calc((20px * 39) + 8px);
-	left: calc((20px * 1) + 8px);
-}
-
-.indi {
-	position: absolute;
-	top: calc((20px * 48) + 8px);
-    left: calc((20px * 45) + 8px);
-}
-
-.ukkinna {
-	position: absolute;
-	top: calc((20px * 41) + 8px);
-    left: calc((20px * 24) + 8px);
 }
