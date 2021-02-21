@@ -15,6 +15,17 @@ body {
 	background-repeat: no-repeat;
 }
 
+img {
+	width: 16px;
+	height: 16px;
+}
+
+#start {
+	position: absolute;
+	top: calc((20px * 42) + 4px);
+	left: calc((20px * 8) + 4px);
+}
+
 #area1 {
 	position: absolute;
 	left: -20px;
